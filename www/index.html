@@ -1,0 +1,275 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBIjpOCQdWKWWMzDboyRortubjTY2aFe8c"></script>
+    <style>
+    body{
+        background-color: #F3E2A9;
+    }
+    h1{
+        width: 100%;
+        text-align: center;
+        margin: 0 auto 0 auto;
+        color: #FA8258;
+    }
+    .select{
+        margin-top: 2px;
+        width:100%;
+        height:30px;
+    }
+    #search{
+        margin-top: 15px;
+        width:100%;
+        height:30px;
+    }
+    #kekka{
+        border-collapse: collapse;   
+    }
+    </style>
+    <script>
+        //都道府県のリストをセットするfunction
+        function set_pref_list(){
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/ishida/get_pref.php?',
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+
+                //連想配列の長さを得る Object.keysメソッド
+                console.log(Object.keys(data.pref).length);
+                var pref_length = Object.keys(data.pref).length;
+
+                for(var i=0; i<pref_length; i++){
+                    $('#pref').append("<option area_code='" + data.pref[i].area_code + "' pref_code='" + data.pref[i].pref_code + "'>" + data.pref[i].pref_name   + "</option>")
+
+                }
+
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+                alert("データの受信に失敗しました");
+            });
+
+        }
+
+        //エリアMのリストをセットするfunction
+        function set_area_list(){
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/ishida/get_area.php?',
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+
+                //取得したデータからフィルタリングをかける
+                //選択された都道府県の状況によってフィルタリングする
+                var pref_code = $("#pref").find("option:selected").attr("pref_code");
+                console.log(pref_code);
+                var filterdata=[];
+
+                filterdata = $.grep(data.garea_middle,function(item){
+                    return item.pref.pref_code==pref_code;
+                });
+
+                console.log("67:"+filterdata);
+
+                console.log("69:"+Object.keys(filterdata).length);
+                var filterdata_length = Object.keys(filterdata).length;
+
+                for(var i=0; i<filterdata_length; i++){
+                    $('#area_m').append("<option areacode_m='" + filterdata[i].areacode_m + "' >" + filterdata[i].areaname_m   + "</option>")
+                }
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+
+        }
+
+
+        //業態（カテゴリL)のリストをセットするfunction
+        function set_category_l_list(){
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/ishida/get_category_l.php?',
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+
+                //連想配列の長さを得る Object.keysメソッド
+                console.log(Object.keys(data.category_l).length);
+                var category_l_length = Object.keys(data.category_l).length;
+
+                for(var i=0; i<category_l_length; i++){
+                    $('#category_l').append("<option category_l_code='" + data.category_l[i].category_l_code + "' >" + data.category_l[i].category_l_name   + "</option>")
+
+                }
+
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+
+
+
+        }
+
+        function search_restrant(pref_code, areacode_m, category_l_code){
+            //条件に一致するレストランの件数を検索する
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/ishida/get_restrant.php?pref=' + pref_code + '&areacode_m=' +  areacode_m + '&category_l=' + category_l_code,
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+                var total_page = data.total_hit_count;
+                var hit_page = data.hit_per_page;
+                $("#total_page").text("該当件数："+total_page+"件");
+                $("#hit_page").text("表示件数："+hit_page+"件");
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+            
+        }
+
+
+        //offset_page:検索開始ページ/検索開始ページ位置（デフォルト:1）
+        function search_restrant_page(pref_code, areacode_m, category_l_code, offset_page){
+            
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/ishida/get_restrant_page.php?pref=' + pref_code +  '&areacode_m=' + areacode_m +  '&category_l=' + category_l_code + '&offset_page=' + offset_page,
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+                show_restrant(data);
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+        }
+
+        function show_restrant(data) {
+            //連想配列の長さを得る Object.keysメソッド
+            console.log(Object.keys(data.rest).length);
+            var rest_len = Object.keys(data.rest).length;
+
+            var html = '';
+            html +='<tr><th rowspan="3"></th><th>画像</th></tr><tr><th >店舗名</th></tr><tr><th>住所</th></tr>'
+            for (var i = 0; i < rest_len; i++) {
+                html += '<tr><td rowspan="4" align="center">'+(i+1)+'</td>'
+                //画像
+                html += '<td align="center"><img src="'+data.rest[i].image_url.shop_image1+'" alt="no image"></td></tr><tr>';
+                //店舗名
+                html += '<td>'+data.rest[i].name+'<br>('+data.rest[i].name_kana+')</td></tr><tr>';
+                //住所
+                html += '<td>'+data.rest[i].address+'</td></tr><tr>';
+                //地図
+                html += '<td id="map" lat="'+data.rest[i].latitude+'" lon="'+data.rest[i].longitude+'" name="'+data.rest[i].name+'" add="'+data.rest[i].address+'" align="center"><input type="button" value="地図" style="width:80%; height:50px"></td></tr>'
+            }
+            $("#kekka").append(html);
+        }
+
+        function showmap(lat,lon,name,add) {
+            var latlng = new google.maps.LatLng(lat, lon);  //表示する地図の座標を指定する
+            var opts = {
+                zoom: 15, //倍率
+                center: latlng,	//地図の中心
+                mapTypeId: google.maps.MapTypeId.ROAD,  		//マップタイプの指定
+                // mapTypeId: google.maps.MapTypeId.HYBRID,  		//マップタイプの指定 :ロードとサテライト
+                //mapTypeId: google.maps.MapTypeId.SATELLITE,  	//マップタイプの指定 :航空写真
+                //mapTypeId: google.maps.MapTypeId.TERRAIN,  		//マップタイプの指定
+                mapTypeControl:false
+            };
+    
+              //地図を表示する
+              var map = new google.maps.Map($("#map_canvas").get(0), opts);
+            g_map = map;
+            
+            //マーカーの座標を決める
+            var myLatlng = new google.maps.LatLng(lat, lon);
+            //マーカを表示する
+            var marker = new google.maps.Marker({
+                position: myLatlng,
+                map: map,
+                title: name
+            });
+    
+            // 吹き出し設定
+            var contentString = "<p>"+add+"<p>";
+            var infowindow = new google.maps.InfoWindow({
+                content:contentString
+            });
+    
+            // マーカと紐付ける
+            //無名ファンクション
+            google.maps.event.addListener(marker, 'click',
+                function(){
+                    infowindow.open(map,marker)
+                }
+            );
+        }
+
+        $(function(){	//←document.ready
+            //■ページを読み込んだらすぐ行う
+            //エリアを表示する
+            set_pref_list();
+            
+            //業態を表示する
+            set_category_l_list();
+
+            //■イベントの割り当て
+            $('#pref').on('change', function(){
+                $("#area_m").text("");
+                set_area_list();
+            });
+
+            $('#search').on('click',function(){
+                $("#kekka").html("");
+                console.log("☆");
+                var pref_code = $("#pref").find("option:selected").attr("pref_code");
+                var areacode_m = $("#area_m").find("option:selected").attr("areacode_m");
+                var category_l_code = $("#category_l").find("option:selected").attr("category_l_code");
+                
+                console.log(pref_code);
+                console.log(areacode_m);
+                console.log(category_l_code);
+                //レストラン検索を行う
+                search_restrant(pref_code,areacode_m,category_l_code);
+                search_restrant_page(pref_code, areacode_m, category_l_code, 1);
+            });
+
+            $(document).on("click","#map",function(){
+                $("#map_canvas").text("");
+                showmap(
+                    $(this).attr("lat"),
+                    $(this).attr("lon"),
+                    $(this).attr("name"),
+                    $(this).attr("add")
+                );
+            });
+        });            
+    
+    </script>
+</head>
+<body>
+    <h1>グルメ情報検索</h1>
+    <select id="pref" class="select"></select><br>
+    <select id="area_m" class="select"></select><br>
+    <select id="category_l" class="select"></select><br>
+    
+    <input type="button" id="search" value="検索">
+    
+    <h3>ここに検索結果を表示します</h3>
+    <p id="total_page"></p>
+    <p id="hit_page"></p>
+    <table id="kekka" border="1"></table>
+    <div id="map_canvas" style="width:100%; height:400px"></div>
+</body>
+</html>
